@@ -83,14 +83,6 @@ class GenBot
 
   end 
 
-  def reply(tweet, meta)
-    resp = @model.make_response(meta[:mentionless], meta[:limit])
-    @bot.delay DELAY do
-      @bot.reply tweet, meta[:reply_prefix] + resp
-    end 
-
-  end 
-
   def favorite(tweet)
     @bot.log "Favoriting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
     @bot.twitter.favorite(tweet[:id])
