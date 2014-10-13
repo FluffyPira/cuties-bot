@@ -23,9 +23,9 @@ If you want to run the bot via heroku, there is a simple guide to deploying your
 - bundle install
 - modify bots.rb to include oauth, account names, and author's twitter handle
 - heroku create
-- heroku apps:rename <your appname> 
+- heroku apps:rename "_Your app name_" 
 - git init
 - git add .
-- git commit -m "<your commit>"
+- git commit -m "_Your commit name_"
 - git push heroku master
 - heroku ps:scale worker=1
