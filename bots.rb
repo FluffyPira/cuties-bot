@@ -5,45 +5,50 @@ CONSUMER_KEY = ""
 CONSUMER_SECRET = ""
 OATH_TOKEN = "" # oauth token for ebooks account
 OAUTH_TOKEN_SECRET = "" # oauth secret for ebooks account
-ROBOT_ID = "ebooks" # Avoid infinite reply chains
-TWITTER_USERNAME = "cuties_bot" # Ebooks account username
-TEXT_MODEL_NAME = "cuties_bot" # This should be the name of the text model
+ROBOT_ID = "book" # Avoid infinite reply chains
+TWITTER_USERNAME = "" # Ebooks account username
+TEXT_MODEL_NAME = "" # This should be the name of the text model
+AUTHOR_NAME = "" # Put your twitter handle in here
 DELAY = 2..30 # Simulated human reply delay range in seconds
-BLACKLIST = ['insomnius', 'upulie', 'horse_inky', 'gray_noise', 'lookingglasssab', 'AmaznPhilEbooks', 'AKBAE_BOT'] # Grumpy users to avoid interaction with
-SPECIAL_WORDS = ['bot', 'ebooks', 'cutie', 'cute', 'sexy', 'girl', 'boy', 'trans', 'queer', 'nb', 'binary', 'love']
+BLACKLIST = ['insomnius', 'upulie'] # Grumpy users to avoid interaction with
+SPECIAL_WORDS = ['bot', 'your', 'words', 'here']
 # Track who we've randomly interacted with globally
 $have_talked = {}
 class GenBot
   
   def initialize(bot, modelname)
-    @bot = bot
-    bot.consumer_key = CONSUMER_KEY
-    bot.consumer_secret = CONSUMER_SECRET
+    @bot = 👽 = bot
+    👽.consumer_key = CONSUMER_KEY
+    👽.consumer_secret = CONSUMER_SECRET
 
-    bot.on_message do |dm|
-      garbage = Random.new.bytes(5)
-      bot.delay DELAY do
-        bot.reply dm, "Talk to @FluffyPira #{garbage}"
+    👽.on_message do |dm|
+      # We don't actually want the bot to really say anything, rather just post lots of cute pics.
+      💩 = Random.new.bytes(5)
+      👽.delay DELAY do
+        👽.reply dm, "Talk to #{AUTHOR_NAME} #{💩}" 
       end 
 
     end 
 
-    bot.on_follow do |user|
-      bot.delay DELAY do
-        bot.follow user[:screen_name]
+    👽.on_follow do |user|
+      👽.delay DELAY do
+        👽.follow user[:screen_name]
       end 
 
     end 
 
     bot.on_mention do |tweet, meta|
       # Avoid infinite reply chains (very small chance of crosstalk)
+      # Probably unneeded as the bot no longer replies to folks, but still works at avoiding bot on bot interaction.
+      # That stuff is sick, bot's just flaunting their robosexuality.
+      # I'm not a robophobe, I swear!
       next if tweet[:user][:screen_name].include?(ROBOT_ID) && rand > 0.05
       next if tweet[:user][:screen_name].include?('bot') && rand > 0.20
       next if tweet[:user][:screen_name].include?('generateacat') && rand > 0.10
-      tokens = NLP.tokenize(tweet[:text])
-      special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
-      if special
-        favorite(tweet) if rand < 0.5
+      🃏 = NLP.tokenize(tweet[:text])
+      🌟 = 🃏.find { |t| SPECIAL_WORDS.include?(t) }
+      if 🌟
+        🆗(tweet) if rand < 0.5
       end 
       
     end 
@@ -52,29 +57,33 @@ class GenBot
       next if BLACKLIST.include?(tweet[:user][:screen_name])
       next if $have_talked[tweet[:user][:screen_name]]
 
-      tokens = NLP.tokenize(tweet[:text])
-      special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
+      🃏 = NLP.tokenize(tweet[:text])
+      🌟 = 🃏.find { |t| SPECIAL_WORDS.include?(t) }
       
-      if special
-        favorite(tweet) if rand < 0.5
-        retweet(tweet) if rand < 0.1
+      if 🌟
+        🆗(tweet) if rand < 0.5
+        🔁(tweet) if rand < 0.1
         $have_talked[tweet[:user][:screen_name]] = true
       end 
 
     end 
 
-    # Schedule a main tweet for every day at midnight
-    bot.scheduler.every '1800' do
+    # Schedule a tweet for every 30 minutes
+    👽.scheduler.every '1800' do
     
-      sing = Dir.entries("pictures/") - %w[.. . .DS_Store]
+      🐈 = Dir.entries("pictures/") - %w[.. . .DS_Store]
   
-      pic = sing.shuffle.pop
+      🐆 = 🐈.shuffle.pop
+      
+      # An easier method of doing this without having to echo to log would be "pictures/#{🐈.shuffle.pop}"
+      # If you chose that method, eliminate the second variable (🐆) and "puts"
   
-      bot.twitter.update_with_media("", File.new("pictures/#{pic}"))
-      puts "@cutie_bot: pictures/#{pic}"    
+      👽.twitter.update_with_media("", File.new("pictures/#{🐆}"))
+      puts "@cutie_bot: pictures/#{🐆}"    
 
     end 
     
+    # Schedule clearance of the $have_talked list every day at midnight.
     bot.scheduler.cron '0 0 * * *' do
       
       $have_talked = {}
@@ -83,13 +92,13 @@ class GenBot
 
   end 
 
-  def favorite(tweet)
+  def 🆗(tweet)
     @bot.log "Favoriting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
     @bot.twitter.favorite(tweet[:id])
 
   end 
 
-  def retweet(tweet)
+  def 🔁(tweet)
     @bot.log "Retweeting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
     @bot.delay DELAY do
       @bot.twitter.retweet(tweet[:id])
