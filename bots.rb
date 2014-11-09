@@ -17,22 +17,23 @@ $have_talked = {}
 class GenBot
   
   def initialize(bot, modelname)
-    @bot = 👽 = bot
-    👽.consumer_key = CONSUMER_KEY
-    👽.consumer_secret = CONSUMER_SECRET
+    posted = Array.new
+    @bot = bot
+    bot.consumer_key = CONSUMER_KEY
+    bot.consumer_secret = CONSUMER_SECRET
 
-    👽.on_message do |dm|
+    bot.on_message do |dm|
       # We don't actually want the bot to really say anything, rather just post lots of cute pics.
-      💩 = Random.new.bytes(5)
-      👽.delay DELAY do
-        👽.reply dm, "Talk to #{AUTHOR_NAME} #{💩}" 
+      shit = Random.new.bytes(5)
+      bot.delay DELAY do
+        bot.reply dm, "Talk to #{AUTHOR_NAME} #{shit}" 
       end 
 
     end 
 
-    👽.on_follow do |user|
-      👽.delay DELAY do
-        👽.follow user[:screen_name]
+    bot.on_follow do |user|
+      bot.delay DELAY do
+        bot.follow user[:screen_name]
       end 
 
     end 
@@ -45,10 +46,10 @@ class GenBot
       next if tweet[:user][:screen_name].include?(ROBOT_ID) && rand > 0.05
       next if tweet[:user][:screen_name].include?('bot') && rand > 0.20
       next if tweet[:user][:screen_name].include?('generateacat') && rand > 0.10
-      🃏 = NLP.tokenize(tweet[:text])
-      🌟 = 🃏.find { |t| SPECIAL_WORDS.include?(t) }
-      if 🌟
-        🆗(tweet) if rand < 0.5
+      tokens = NLP.tokenize(tweet[:text])
+      special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
+      if special
+        favourite(tweet) if rand < 0.5
       end 
       
     end 
@@ -57,31 +58,37 @@ class GenBot
       next if BLACKLIST.include?(tweet[:user][:screen_name])
       next if $have_talked[tweet[:user][:screen_name]]
 
-      🃏 = NLP.tokenize(tweet[:text])
-      🌟 = 🃏.find { |t| SPECIAL_WORDS.include?(t) }
+      tokens = NLP.tokenize(tweet[:text])
+      special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
       
-      if 🌟
-        🆗(tweet) if rand < 0.5
-        🔁(tweet) if rand < 0.1
+      if special
+        favourite(tweet) if rand < 0.5
+        retweet(tweet) if rand < 0.1
         $have_talked[tweet[:user][:screen_name]] = true
       end 
 
     end 
 
     # Schedule a tweet for every 30 minutes
-    👽.scheduler.every '1800' do
-    
-      🐈 = Dir.entries("pictures/") - %w[.. . .DS_Store]
-  
-      🐆 = 🐈.shuffle.pop
+    bot.scheduler.every '1800' do
       
-      # An easier method of doing this without having to echo to log would be "pictures/#{🐈.shuffle.pop}"
-      # If you chose that method, eliminate the second variable (🐆) and "puts"
-  
-      👽.twitter.update_with_media("", File.new("pictures/#{🐆}"))
-      puts "@cutie_bot: pictures/#{🐆}"    
+      piclist = get_pics(posted) 
 
-    end 
+      if piclist.empty?
+        posted.clear
+        piclist = get_pics(posted) 
+      end
+      
+      pic = piclist.shuffle.pop
+        
+      bot.twitter.update_with_media("", File.new("pictures/#{pic}"))
+      bot.log "#{TWITTER_USERNAME}: pictures/#{pic}"
+      posted.push(pic)
+      # Debug stuff. Uncomment it if you want this to show up in the log as well.
+      # bot.log "#{TWITTER_USERNAME}: Total pics posted: #{posted.size}, Total pics remaining #{piclist.size}"  
+      
+    end
+
     
     # Schedule clearance of the $have_talked list every day at midnight.
     bot.scheduler.cron '0 0 * * *' do
@@ -92,19 +99,25 @@ class GenBot
 
   end 
 
-  def 🆗(tweet)
+  def favourite(tweet)
     @bot.log "Favoriting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
     @bot.twitter.favorite(tweet[:id])
 
   end 
 
-  def 🔁(tweet)
+  def retweet(tweet)
     @bot.log "Retweeting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
     @bot.delay DELAY do
       @bot.twitter.retweet(tweet[:id])
     end 
 
   end 
+  
+  def get_pics(posted)    
+    pics = Dir.entries("pictures/") - %w[.. . .DS_Store]
+    pics -= posted
+    pics      
+  end
 
 end 
 
