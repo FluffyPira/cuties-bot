@@ -5,13 +5,17 @@ CONSUMER_KEY = ""
 CONSUMER_SECRET = ""
 OATH_TOKEN = "" # oauth token for ebooks account
 OAUTH_TOKEN_SECRET = "" # oauth secret for ebooks account
+
 ROBOT_ID = "book" # Avoid infinite reply chains
 TWITTER_USERNAME = "" # Ebooks account username
 TEXT_MODEL_NAME = "" # This should be the name of the text model
 AUTHOR_NAME = "" # Put your twitter handle in here
 DELAY = 2..30 # Simulated human reply delay range in seconds
+
 BLACKLIST = ['insomnius', 'upulie'] # Grumpy users to avoid interaction with
 SPECIAL_WORDS = ['bot', 'your', 'words', 'here']
+TRIGGER_WORDS = ['cunt', 'bot', 'bitch', 'zoe', 'anita', 'tranny', 'shemale', 'faggot', 'fag', 'ethics in games journalism']
+
 # Track who we've randomly interacted with globally
 $have_talked = {}
 class GenBot
@@ -46,10 +50,15 @@ class GenBot
       next if tweet[:user][:screen_name].include?(ROBOT_ID) && rand > 0.05
       next if tweet[:user][:screen_name].include?('bot') && rand > 0.20
       next if tweet[:user][:screen_name].include?('generateacat') && rand > 0.10
+      
       tokens = NLP.tokenize(tweet[:text])
       special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
+      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t.downcase) }
+      
       if special
         favourite(tweet) if rand < 0.5
+      elsif trigger
+        block(tweet)
       end 
       
     end 
@@ -60,11 +69,15 @@ class GenBot
 
       tokens = NLP.tokenize(tweet[:text])
       special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
+      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t.downcase) }
       
       if special
         favourite(tweet) if rand < 0.5
         retweet(tweet) if rand < 0.1
         $have_talked[tweet[:user][:screen_name]] = true
+        # If a trigger word is mentioned by someone they're following, chance to block user.
+      elsif trigger
+        block(tweet) if rand < 0.2
       end 
 
     end 
@@ -117,6 +130,12 @@ class GenBot
     pics = Dir.entries("pictures/") - %w[.. . .DS_Store]
     pics -= posted
     pics      
+  end
+  
+  def block(tweet)
+    @bot.log "Blocking and reporting @#{tweet[:user][:screen_name]}"
+    @bot.twitter.block(tweet[:user][:screen_name])
+    @bot.twitter.report_spam(tweet[:user][:screen_name])
   end
 
 end 
