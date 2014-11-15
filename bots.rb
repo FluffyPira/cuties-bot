@@ -6,25 +6,27 @@ CONSUMER_SECRET = ""
 OATH_TOKEN = "" # oauth token for ebooks account
 OAUTH_TOKEN_SECRET = "" # oauth secret for ebooks account
 
-ROBOT_ID = "book" # Avoid infinite reply chains
 TWITTER_USERNAME = "" # Ebooks account username
-TEXT_MODEL_NAME = "" # This should be the name of the text model
 AUTHOR_NAME = "" # Put your twitter handle in here
 DELAY = 2..30 # Simulated human reply delay range in seconds
+BLACKLIST = [] # Grumpy users to avoid interaction with
 
-BLACKLIST = ['insomnius', 'upulie'] # Grumpy users to avoid interaction with
-SPECIAL_WORDS = ['bot', 'your', 'words', 'here']
-TRIGGER_WORDS = ['cunt', 'bot', 'bitch', 'zoe', 'anita', 'tranny', 'shemale', 'faggot', 'fag', 'ethics in games journalism']
-
-# Track who we've randomly interacted with globally
-$have_talked = {}
+SPECIAL_WORDS = ['your', 'words', 'here'] # may trigger fav
+TRIGGER_WORDS = ['cunt', 'fag', 'tranny'] # will trigger auto block
+# Thanks to @vex0rian and @parvitude for the random seed/post_pic method to keep it from posting duplicates near eachother.
+# You are both cuties ~<3.
 class GenBot
   
   def initialize(bot, modelname)
-    posted = Array.new
     @bot = bot
     bot.consumer_key = CONSUMER_KEY
     bot.consumer_secret = CONSUMER_SECRET
+    
+    bot.on_startup do
+      @pics = Dir.entries("pictures/") - %w[.. . .DS_Store]
+      @status_count = @bot.twitter.user.statuses_count
+      post_picture()
+    end
 
     bot.on_message do |dm|
       # We don't actually want the bot to really say anything, rather just post lots of cute pics.
@@ -43,39 +45,28 @@ class GenBot
     end 
 
     bot.on_mention do |tweet, meta|
-      # Avoid infinite reply chains (very small chance of crosstalk)
-      # Probably unneeded as the bot no longer replies to folks, but still works at avoiding bot on bot interaction.
-      # That stuff is sick, bot's just flaunting their robosexuality.
-      # I'm not a robophobe, I swear!
-      next if tweet[:user][:screen_name].include?(ROBOT_ID) && rand > 0.05
-      next if tweet[:user][:screen_name].include?('bot') && rand > 0.20
-      next if tweet[:user][:screen_name].include?('generateacat') && rand > 0.10
-      
       tokens = NLP.tokenize(tweet[:text])
       special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
-      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t.downcase) }
+      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t) }
       
       if special
-        favourite(tweet) if rand < 0.5
+        favourite(tweet) if rand < 0.2
       elsif trigger
         block(tweet)
       end 
+
       
     end 
 
     bot.on_timeline do |tweet, meta|
       next if BLACKLIST.include?(tweet[:user][:screen_name])
-      next if $have_talked[tweet[:user][:screen_name]]
 
       tokens = NLP.tokenize(tweet[:text])
       special = tokens.find { |t| SPECIAL_WORDS.include?(t) }
-      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t.downcase) }
+      trigger = tokens.find { |t| TRIGGER_WORDS.include?(t) }
       
       if special
-        favourite(tweet) if rand < 0.5
-        retweet(tweet) if rand < 0.1
-        $have_talked[tweet[:user][:screen_name]] = true
-        # If a trigger word is mentioned by someone they're following, chance to block user.
+        favourite(tweet) if rand < 0.1
       elsif trigger
         block(tweet) if rand < 0.2
       end 
@@ -83,31 +74,8 @@ class GenBot
     end 
 
     # Schedule a tweet for every 30 minutes
-    bot.scheduler.every '1800' do
-      
-      piclist = get_pics(posted) 
-
-      if piclist.empty?
-        posted.clear
-        piclist = get_pics(posted) 
-      end
-      
-      pic = piclist.shuffle.pop
-        
-      bot.twitter.update_with_media("", File.new("pictures/#{pic}"))
-      bot.log "#{TWITTER_USERNAME}: pictures/#{pic}"
-      posted.push(pic)
-      # Debug stuff. Uncomment it if you want this to show up in the log as well.
-      # bot.log "#{TWITTER_USERNAME}: Total pics posted: #{posted.size}, Total pics remaining #{piclist.size}"  
-      
-    end
-
-    
-    # Schedule clearance of the $have_talked list every day at midnight.
-    bot.scheduler.cron '0 0 * * *' do
-      
-      $have_talked = {}
-    
+    bot.scheduler.every '3600' do
+      post_picture()      
     end
 
   end 
@@ -117,19 +85,21 @@ class GenBot
     @bot.twitter.favorite(tweet[:id])
 
   end 
-
-  def retweet(tweet)
-    @bot.log "Retweeting @#{tweet[:user][:screen_name]}: #{tweet[:text]}"
-    @bot.delay DELAY do
-      @bot.twitter.retweet(tweet[:id])
-    end 
-
-  end 
-  
-  def get_pics(posted)    
-    pics = Dir.entries("pictures/") - %w[.. . .DS_Store]
-    pics -= posted
-    pics      
+ 
+  def next_index()
+    seq = (0..(@pics.size - 1)).to_a
+    seed = @status_count / @pics.size
+    r = Random.new(seed)
+    seq.shuffle!(random: r)
+    res = seq[@status_count % @pics.size]
+    @status_count = @status_count + 1
+    return res
+  end
+ 
+  def post_picture()
+    pic = @pics[next_index]
+    @bot.twitter.update_with_media("", File.new("pictures/#{pic}"))
+    @bot.log "posted pictures/#{pic}"
   end
   
   def block(tweet)
@@ -147,5 +117,5 @@ end
 Ebooks::Bot.new(TWITTER_USERNAME) do |bot|
   bot.oauth_token = OATH_TOKEN
   bot.oauth_token_secret = OAUTH_TOKEN_SECRET
-  make_bot(bot, TEXT_MODEL_NAME)
-end 
+  make_bot(bot, TWITTER_USERNAME)
+end
