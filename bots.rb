@@ -12,7 +12,7 @@ DELAY = 2..30 # Simulated human reply delay range in seconds
 BLACKLIST = [] # Grumpy users to avoid interaction with
 
 SPECIAL_WORDS = ['your', 'words', 'here'] # may trigger fav
-TRIGGER_WORDS = ['cunt', 'fag', 'tranny'] # will trigger auto block
+TRIGGER_WORDS = ['trigger', 'slur', 'shitty thing to say'] # will trigger auto block
 # Thanks to @vex0rian and @parvitude for the random seed/post_pic method to keep it from posting duplicates near eachother.
 # You are both cuties ~<3.
 class GenBot
@@ -23,7 +23,8 @@ class GenBot
     bot.consumer_secret = CONSUMER_SECRET
     
     bot.on_startup do
-      @pics = Dir.entries("pictures/") - %w[.. . .DS_Store]
+      @pics = Dir.entries("pictures/") - %w[.. . .DS_Store].sort
+      bot.log @pics.take(5) # poll for consistency and tracking purposes.
       @status_count = @bot.twitter.user.statuses_count
       post_picture()
     end
