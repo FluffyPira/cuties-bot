@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require 'twitter_ebooks'
+require 'set'
 include Ebooks
+
 CONSUMER_KEY = ""
 CONSUMER_SECRET = ""
 OATH_TOKEN = "" # oauth token for ebooks account
@@ -26,6 +28,7 @@ class GenBot
       @pics = Dir.entries("pictures/") - %w[.. . .DS_Store].sort
       bot.log @pics.take(5) # poll for consistency and tracking purposes.
       @status_count = @bot.twitter.user.statuses_count
+      prune_following()
       post_picture()
     end
 
@@ -101,6 +104,14 @@ class GenBot
     pic = @pics[next_index]
     @bot.twitter.update_with_media("", File.new("pictures/#{pic}"))
     @bot.log "posted pictures/#{pic}"
+  end
+  
+  def prune_following()
+    following = Set.new(@bot.twitter.friend_ids.to_a)
+    followers = Set.new(@bot.twitter.follower_ids.to_a)
+    to_unfollow = (following - followers).to_a
+    @bot.log("Unfollowing user ids: #{to_unfollow}")
+    @bot.twitter.unfollow(to_unfollow)
   end
   
   def block(tweet)
