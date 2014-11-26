@@ -1,31 +1,11 @@
-# Cuties Bot v 1.0
+#Cuties Bot
+### This repo is basically abandoned.
+That said, the code has been moved to a new repo [picture-bot](https://github.com/FluffyPira/cuties-bot) and thus is no longer being maintained. The reason for this is I could not get rid of the 100 ish mb of picture files I uploaded initially with the bot since it's essentially the code of an already functioning bot.
 
-A deployable twitter bot that solely exists to post pictures of cute things to the internet. Uses Mispy's [Twitter_Ebooks](https://github.com/mispy/twitter_ebooks) gem to run the bot, the script itself is based on Mispy's [Ebooks_example](https://github.com/mispy/ebooks_example) and modified to update with pictures only and none of the talky stuff.
+Whoops.
 
-## Usage:
-To install and run the bot, simply insert the commands below.
+Because of that silly mistake and the failure of all attempted fixes, I've decided to move the code to a new repo with a new name that describes it's function a little better and is less based around an already functioning twitter bot.
 
-- git clone https://github.com/FluffyPira/cuties-bot.git
-- cd cuties-bot
-- bundle install
-- modify bots.rb to include oauth, account names, and author's twitter handle
-- run with ./run.rb
+Apologies for any inconvinience and contributions lost in the switch. It was my mistake and I'm very sorry, I just did not necessarily expect this to become a Thing™ back when I initially pushed it and some months later now realize pushing all the picutres with it was a collosal failure on my part. :(
 
-Remember that to get the oauth information, you will need to create a [twitter app](https://apps.twitter.com/app/new) associated with the account or use [twurl](https://github.com/marcel/twurl) to associate your bot with an app. 
-
-If you would prefer using different pictures, clear the "pictures" folder and move whatever pictures you want to post to twitter in there. They're posted automagically every 30 minutes unless otherwise specified.
-
-## Heroku:
-If you want to run the bot via heroku, there is a simple guide to deploying your [first git to heroku](https://devcenter.heroku.com/articles/git). If you already have heroku, the basic deployment prodecure is as follows:
-
-- git clone https://github.com/FluffyPira/cuties-bot.git
-- cd cuties-bot
-- bundle install
-- modify bots.rb to include oauth, account names, and author's twitter handle
-- git init
-- git add .
-- git commit -m "_Your commit name_"
-- heroku create
-- heroku apps:rename "_Your app name_" 
-- git push heroku master
-- heroku ps:scale worker=1
+If, for some reason, you still want to use this repo, clone it and follow the instructions found on [picture-bot](https://github.com/FluffyPira/cuties-bot).
